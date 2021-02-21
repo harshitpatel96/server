@@ -23,21 +23,17 @@ passport.use(
 	   callbackURL: '/auth/google/callback',
 	   proxy: true
     }, 
-      (accessToken, refreshToken, profile, done) => {
-	  User.findOne({ googleId: profile.id }).then(existingUser => {
-	      // existing user would be either a mongoose model instance if found else Null 
-		  if (existingUser) {
-		      // we already have a record the given profile ID
-		      done(null, existingUser); // first argument is an error object it communicates to passport that something went wrong. Therfore, Null means there  is no error here, we are totally happy, and the other argument is User record
-		  } else {
-		      // we don't have a user record with this ID, make a new record
-		      new User({ googleId: profile.id })
-			  .save()
-			  .then(user => done(null, user)); // this is an aynchronous function and thus we need to wait until it finishes
-		      // here the user we created vs the user inside the then callback are different model instances but of the same record. The second user instance is newer and fresher
-		  }
-	  });
-	 
+      async (accessToken, refreshToken, profile, done) => {
+		const existingUser = await User.findOne({ googleId: profile.id })
+		// existing user would be either a mongoose model instance if found else Null 
+		if (existingUser) {
+			// we already have a record the given profile ID
+			 return done(null, existingUser); // first argument is an error object it communicates to passport that something went wrong. Therfore, Null means there  is no error here, we are totally happy, and the other argument is User record
+		}
+		// we don't have a user record with this ID, make a new record
+		const user = await new User({ googleId: profile.id }).save()
+		done(null, user); // this is an aynchronous function and thus we need to wait until it finishes
+		// here the user we created vs the user inside the then callback are different model instances but of the same record. The second user instance is newer and fresher	 
     }
   )
 ); // passport.use is making passport ready for using GoogleStrategy. new GoogleStrategy creates a new instance of passport google strategy.
